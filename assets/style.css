@@ -245,8 +245,9 @@ table.tbl { width: 100%; border-collapse: collapse; background: #fff; border-rad
 @media (max-width: 860px) {
   .reader { grid-template-columns: 1fr; }
   .toc { position: static; }
-  .hero { padding: 30px 22px; }
-  .hero h1 { font-size: 26px; }
+  .hero { padding: 26px 18px; }
+  .hero::after { display: none; }
+  .hero h1 { font-size: 24px; }
   .brand-text small { display: none; }
   .block { padding: 18px 16px; }
 }
