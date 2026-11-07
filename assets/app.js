@@ -34,7 +34,7 @@
   }
   function chTitle(c) { return c.ch_title.replace(/^第.+?章[：:]\s*/, ""); }
   function setActive(hash) {
-    document.querySelectorAll(".topnav a").forEach(function (a) {
+    document.querySelectorAll(".bottom-nav .nav-item").forEach(function (a) {
       a.classList.toggle("active", a.getAttribute("href") === hash);
     });
   }
@@ -118,15 +118,52 @@
   /* ---------------- 进度页 ---------------- */
   function renderProgress() {
     var s = loadScores();
-    var html = '<h2 class="section-title">我的测试进度</h2>' +
-      '<table class="tbl"><thead><tr><th>章节</th><th>最佳成绩</th><th>最近一次</th><th>次数</th><th></th></tr></thead><tbody>';
+    var testedCount = 0;
+    var totalQuestions = 0;
+    var totalCorrect = 0;
     CH.forEach(function (c) {
       var r = s[c.week_num];
-      html += "<tr><td>" + esc(c.ch_title) + "</td><td>" + (r ? r.best + "/" + r.total : "—") + "</td><td>" +
-        (r ? r.last + "/" + r.total : "—") + "</td><td>" + (r ? r.attempts : 0) + '</td><td><a class="btn" href="#/quiz/' +
-        c.week_num + '">' + (r ? "再测一次" : "开始测试") + "</a></td></tr>";
+      if (r) {
+        testedCount++;
+        totalQuestions += r.total;
+        totalCorrect += r.best;
+      }
     });
-    html += '</tbody></table><div class="actions" style="margin-top:16px"><button class="btn" id="reset">清除我的成绩记录</button></div>';
+
+    var html = '<h2 class="section-title">我的测试进度</h2>';
+
+    // 顶部统计概览卡片
+    html += '<div class="progress-summary">' +
+      '<div class="stat-card"><div class="num">' + testedCount + ' / ' + CH.length + '</div><div class="lbl">已测章节</div></div>' +
+      '<div class="stat-card"><div class="num">' + (testedCount ? Math.round((totalCorrect / totalQuestions) * 100) + '%' : '—') + '</div><div class="lbl">综合正确率</div></div>' +
+      '<div class="stat-card"><div class="num">' + totalCorrect + ' / ' + (testedCount ? totalQuestions : 0) + '</div><div class="lbl">最佳总得分</div></div>' +
+      '</div>';
+
+    // 进度卡片列表（手机端体验绝佳）
+    html += '<div class="progress-list">';
+    CH.forEach(function (c) {
+      var r = s[c.week_num];
+      var isDone = !!r;
+      var scorePct = r ? Math.round((r.best / r.total) * 100) : 0;
+      var statusClass = !isDone ? 'pending' : (scorePct >= 80 ? 'good' : (scorePct >= 60 ? 'pass' : 'retry'));
+
+      html += '<div class="progress-card ' + statusClass + '">' +
+        '<div class="card-top">' +
+          '<div class="ch-badge">第 ' + c.week_num + ' 周</div>' +
+          '<div class="score-pill">' + (r ? r.best + ' / ' + r.total + ' 题' : '未测试') + '</div>' +
+        '</div>' +
+        '<h3 class="ch-title">' + esc(c.ch_title) + '</h3>' +
+        '<p class="ch-sub">' + esc(c.subtitle) + '</p>' +
+        '<div class="card-bar"><div class="fill" style="width:' + scorePct + '%"></div></div>' +
+        '<div class="card-footer">' +
+          '<span class="attempts-text">' + (r ? '已测 ' + r.attempts + ' 次 · 最近 ' + r.last + '/' + r.total : '建议学完本章后自测') + '</span>' +
+          '<a class="btn ' + (isDone ? 'primary' : 'gold') + '" href="#/quiz/' + c.week_num + '">' + (isDone ? '再测一次' : '开始测试') + '</a>' +
+        '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="actions" style="margin-top:24px;justify-content:center"><button class="btn" id="reset">清除本设备测试记录</button></div>';
     app.innerHTML = html;
     document.getElementById("reset").onclick = function () {
       if (confirm("确定清除本浏览器中的全部测试记录？")) { localStorage.removeItem(STORE_KEY); renderProgress(); }
